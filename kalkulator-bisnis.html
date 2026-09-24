@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kalkulator Bisnis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#12161d; --surface:#1a2029; --surface-2:#1f2631;
+  --line:#2a3240; --text:#e8ebf0; --text-dim:#8b93a3;
+  --accent:#3ecf8e; --accent-dim:#2a6b52; --danger:#e0664f;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  box-sizing:border-box;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#f3f2ee; --surface:#ffffff; --surface-2:#f7f6f3;
+    --line:#e1ddd4; --text:#1c2027; --text-dim:#6b6f78;
+    --accent:#1f8f5f; --accent-dim:#d7f0e2; --danger:#c0432c;
+  }
+}
+:root[data-theme="light"]{
+  --bg:#f3f2ee; --surface:#ffffff; --surface-2:#f7f6f3;
+  --line:#e1ddd4; --text:#1c2027; --text-dim:#6b6f78;
+  --accent:#1f8f5f; --accent-dim:#d7f0e2; --danger:#c0432c;
+}
+*{box-sizing:border-box;}
+html{height:100%; scroll-padding-top:env(safe-area-inset-top,0px);}
+body{
+  height:100%; margin:0; background:var(--bg); color:var(--text);
+  font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased;
+}
+.app{display:flex; min-height:100vh; max-width:1100px; margin:0 auto;}
+.nav{
+  width:220px; flex-shrink:0; background:var(--surface); border-right:1px solid var(--line);
+  padding:28px 14px; position:sticky; top:0; height:100vh;
+}
+.brand{font-family:'Fraunces',serif; font-weight:600; font-size:1.15rem; padding:0 10px 24px; letter-spacing:-.01em;}
+.brand span{color:var(--accent);}
+.tab-btn{
+  display:flex; align-items:center; gap:10px; width:100%; text-align:left;
+  background:none; border:none; color:var(--text-dim); font-family:'Inter',sans-serif;
+  font-size:.92rem; padding:11px 10px; border-radius:8px; cursor:pointer; margin-bottom:2px;
+}
+.tab-btn:hover{background:var(--surface-2); color:var(--text);}
+.tab-btn.active{background:var(--surface-2); color:var(--text); font-weight:600;}
+.tab-btn.active .dot{background:var(--accent);}
+.dot{width:6px; height:6px; border-radius:50%; background:var(--line); flex-shrink:0;}
+main{flex:1; padding:36px 40px 60px; min-width:0;}
+.panel{display:none;}
+.panel.active{display:block; animation:fade .25s ease;}
+@keyframes fade{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);}}
+h1{font-family:'Fraunces',serif; font-weight:600; font-size:1.7rem; margin:0 0 6px; letter-spacing:-.01em;}
+.sub{color:var(--text-dim); font-size:.9rem; margin:0 0 28px; max-width:60ch; line-height:1.5;}
+.field{margin-bottom:16px;}
+label{display:block; font-size:.82rem; color:var(--text-dim); margin-bottom:6px;}
+input[type=number], input[type=text]{
+  width:100%; background:var(--surface-2); border:1px solid var(--line); color:var(--text);
+  font-family:'IBM Plex Mono',monospace; font-size:.95rem; padding:11px 12px; border-radius:8px;
+  outline:none;
+}
+input:focus{border-color:var(--accent);}
+.row{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+@media (max-width:640px){ .row{grid-template-columns:1fr;} .app{flex-direction:column;} .nav{width:100%; height:auto; position:relative; display:flex; overflow-x:auto; padding:14px;} .brand{display:none;} .tab-btn{flex-shrink:0; width:auto; white-space:nowrap;} main{padding:24px 18px 50px;} }
+.actions{display:flex; gap:10px; margin:26px 0 8px;}
+button.primary{
+  background:var(--accent); color:#0e1512; border:none; font-weight:600; font-size:.92rem;
+  padding:12px 22px; border-radius:8px; cursor:pointer; font-family:'Inter',sans-serif;
+}
+button.primary:hover{opacity:.9;}
+button.ghost{
+  background:none; border:1px solid var(--line); color:var(--text-dim); font-size:.92rem;
+  padding:12px 20px; border-radius:8px; cursor:pointer; font-family:'Inter',sans-serif;
+}
+button.ghost:hover{color:var(--text); border-color:var(--text-dim);}
+.result{
+  margin-top:24px; padding:22px 24px; background:var(--surface); border:1px solid var(--line);
+  border-radius:10px; display:none;
+}
+.result.show{display:block;}
+.result-row{display:flex; justify-content:space-between; align-items:baseline; padding:9px 0; border-bottom:1px solid var(--line);}
+.result-row:last-child{border-bottom:none;}
+.result-label{color:var(--text-dim); font-size:.86rem;}
+.result-value{font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:1.05rem;}
+.result-value.big{font-size:1.5rem; color:var(--accent);}
+.note{font-size:.78rem; color:var(--text-dim); margin-top:14px; line-height:1.5;}
+/* Standard calculator */
+.calc-display{
+  background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:22px 18px;
+  text-align:right; font-family:'IBM Plex Mono',monospace; margin-bottom:14px; overflow-x:auto;
+}
+.calc-expr{color:var(--text-dim); font-size:.85rem; min-height:1.2em;}
+.calc-cur{font-size:2rem; font-weight:600; min-height:1.3em;}
+.calc-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:9px;}
+.calc-grid button{
+  padding:16px 0; border-radius:8px; border:1px solid var(--line); background:var(--surface);
+  color:var(--text); font-size:1.05rem; font-family:'IBM Plex Mono',monospace; cursor:pointer;
+}
+.calc-grid button:hover{background:var(--surface-2);}
+.calc-grid button.op{color:var(--accent); font-weight:600;}
+.calc-grid button.eq{background:var(--accent); color:#0e1512; font-weight:600; border-color:var(--accent);}
+.calc-grid button.wide{grid-column:span 2;}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="nav">
+    <div class="brand">Kalkulator<span>Bisnis</span></div>
+    <button class="tab-btn active" data-tab="standar"><span class="dot"></span>Kalkulator Standar</button>
+    <button class="tab-btn" data-tab="bep"><span class="dot"></span>Break-Even Point</button>
+    <button class="tab-btn" data-tab="margin"><span class="dot"></span>Margin Keuntungan</button>
+    <button class="tab-btn" data-tab="roi"><span class="dot"></span>Return on Investment</button>
+    <button class="tab-btn" data-tab="produksi"><span class="dot"></span>Biaya Produksi</button>
+  </nav>
+  <main>
+
+    <!-- STANDARD CALCULATOR -->
+    <section class="panel active" id="standar">
+      <h1>Kalkulator Standar</h1>
+      <p class="sub">Operasi aritmatika dasar: tambah, kurang, kali, bagi.</p>
+      <div class="calc-display">
+        <div class="calc-expr" id="calcExpr">&nbsp;</div>
+        <div class="calc-cur" id="calcCur">0</div>
+      </div>
+      <div class="calc-grid" id="calcGrid"></div>
+    </section>
+
+    <!-- BEP -->
+    <section class="panel" id="bep">
+      <h1>Break-Even Point</h1>
+      <p class="sub">Menghitung jumlah unit dan nominal penjualan agar bisnis mencapai titik impas (tidak untung, tidak rugi).</p>
+      <div class="field"><label>Biaya Tetap / Fixed Cost (Rp)</label><input type="number" id="bepFC" placeholder="cth: 10000000"></div>
+      <div class="row">
+        <div class="field"><label>Biaya Variabel per Unit (Rp)</label><input type="number" id="bepVC" placeholder="cth: 15000"></div>
+        <div class="field"><label>Harga Jual per Unit (Rp)</label><input type="number" id="bepP" placeholder="cth: 25000"></div>
+      </div>
+      <div class="actions">
+        <button class="primary" onclick="calcBEP()">Hitung</button>
+        <button class="ghost" onclick="resetPanel('bep')">Reset</button>
+      </div>
+      <div class="result" id="bepResult">
+        <div class="result-row"><span class="result-label">Kontribusi Margin per Unit</span><span class="result-value" id="bepCM">-</span></div>
+        <div class="result-row"><span class="result-label">BEP dalam Unit</span><span class="result-value big" id="bepUnit">-</span></div>
+        <div class="result-row"><span class="result-label">BEP dalam Rupiah</span><span class="result-value big" id="bepRp">-</span></div>
+      </div>
+      <p class="note">Logika: Margin Kontribusi = Harga Jual − Biaya Variabel. BEP (unit) = Biaya Tetap ÷ Margin Kontribusi. BEP (Rp) = BEP (unit) × Harga Jual.</p>
+    </section>
+
+    <!-- MARGIN -->
+    <section class="panel" id="margin">
+      <h1>Margin Keuntungan</h1>
+      <p class="sub">Menghitung Gross Profit Margin dan Net Profit Margin dari total pendapatan.</p>
+      <div class="field"><label>Pendapatan / Revenue (Rp)</label><input type="number" id="mgRev" placeholder="cth: 50000000"></div>
+      <div class="row">
+        <div class="field"><label>Harga Pokok Penjualan / COGS (Rp)</label><input type="number" id="mgCogs" placeholder="cth: 30000000"></div>
+        <div class="field"><label>Total Beban Operasional Lain (Rp)</label><input type="number" id="mgOpex" placeholder="cth: 8000000"></div>
+      </div>
+      <div class="actions">
+        <button class="primary" onclick="calcMargin()">Hitung</button>
+        <button class="ghost" onclick="resetPanel('margin')">Reset</button>
+      </div>
+      <div class="result" id="mgResult">
+        <div class="result-row"><span class="result-label">Laba Kotor / Gross Profit</span><span class="result-value" id="mgGrossProfit">-</span></div>
+        <div class="result-row"><span class="result-label">Gross Profit Margin</span><span class="result-value big" id="mgGPM">-</span></div>
+        <div class="result-row"><span class="result-label">Laba Bersih / Net Profit</span><span class="result-value" id="mgNetProfit">-</span></div>
+        <div class="result-row"><span class="result-label">Net Profit Margin</span><span class="result-value big" id="mgNPM">-</span></div>
+      </div>
+      <p class="note">Logika: Laba Kotor = Revenue − COGS. GPM = (Laba Kotor ÷ Revenue) × 100%. Laba Bersih = Laba Kotor − Beban Operasional. NPM = (Laba Bersih ÷ Revenue) × 100%.</p>
+    </section>
+
+    <!-- ROI -->
+    <section class="panel" id="roi">
+      <h1>Return on Investment</h1>
+      <p class="sub">Mengukur persentase keuntungan yang dihasilkan relatif terhadap total nilai investasi.</p>
+      <div class="row">
+        <div class="field"><label>Total Nilai Investasi (Rp)</label><input type="number" id="roiInvest" placeholder="cth: 100000000"></div>
+        <div class="field"><label>Keuntungan Bersih dari Investasi (Rp)</label><input type="number" id="roiProfit" placeholder="cth: 25000000"></div>
+      </div>
+      <div class="actions">
+        <button class="primary" onclick="calcROI()">Hitung</button>
+        <button class="ghost" onclick="resetPanel('roi')">Reset</button>
+      </div>
+      <div class="result" id="roiResult">
+        <div class="result-row"><span class="result-label">ROI</span><span class="result-value big" id="roiVal">-</span></div>
+        <div class="result-row"><span class="result-label">Status</span><span class="result-value" id="roiStatus">-</span></div>
+      </div>
+      <p class="note">Logika: ROI (%) = (Keuntungan Bersih ÷ Total Investasi) × 100%. ROI positif berarti investasi menghasilkan laba; ROI negatif berarti rugi.</p>
+    </section>
+
+    <!-- PRODUKSI -->
+    <section class="panel" id="produksi">
+      <h1>Biaya Produksi / Operasional</h1>
+      <p class="sub">Menghitung total biaya manufaktur atau maintenance mesin dari komponen biaya material, tenaga kerja, dan overhead.</p>
+      <div class="row">
+        <div class="field"><label>Biaya Material / Bahan Baku (Rp)</label><input type="number" id="prMat" placeholder="cth: 12000000"></div>
+        <div class="field"><label>Biaya Tenaga Kerja (Rp)</label><input type="number" id="prLabor" placeholder="cth: 6000000"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Biaya Overhead (listrik, sewa, maintenance) (Rp)</label><input type="number" id="prOver" placeholder="cth: 3000000"></div>
+        <div class="field"><label>Jumlah Unit Diproduksi (opsional)</label><input type="number" id="prUnits" placeholder="cth: 500"></div>
+      </div>
+      <div class="actions">
+        <button class="primary" onclick="calcProduksi()">Hitung</button>
+        <button class="ghost" onclick="resetPanel('produksi')">Reset</button>
+      </div>
+      <div class="result" id="prResult">
+        <div class="result-row"><span class="result-label">Total Biaya Produksi</span><span class="result-value big" id="prTotal">-</span></div>
+        <div class="result-row"><span class="result-label">Biaya per Unit</span><span class="result-value" id="prPerUnit">-</span></div>
+      </div>
+      <p class="note">Logika: Total Biaya = Material + Tenaga Kerja + Overhead. Biaya per Unit = Total Biaya ÷ Jumlah Unit (jika diisi).</p>
+    </section>
+
+  </main>
+</div>
+
+<script>
+// ---------- Navigation ----------
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ---------- Helpers ----------
+function fmtRp(n){
+  if(isNaN(n)) return '-';
+  return 'Rp ' + Math.round(n).toLocaleString('id-ID');
+}
+function fmtPct(n){
+  if(isNaN(n)) return '-';
+  return n.toFixed(2) + '%';
+}
+function resetPanel(id){
+  document.querySelectorAll('#'+id+' input').forEach(i=>i.value='');
+  const res = document.getElementById(id+'Result') || document.querySelector('#'+id+' .result');
+  if(res) res.classList.remove('show');
+}
+
+// ---------- BEP ----------
+// BEP unit = Fixed Cost / (Harga Jual - Biaya Variabel per unit)
+// BEP rupiah = BEP unit * Harga Jual
+function calcBEP(){
+  const fc = parseFloat(document.getElementById('bepFC').value)||0;
+  const vc = parseFloat(document.getElementById('bepVC').value)||0;
+  const p  = parseFloat(document.getElementById('bepP').value)||0;
+  const cm = p - vc; // margin kontribusi per unit
+  const unit = cm>0 ? fc/cm : NaN;
+  const rp = unit*p;
+  document.getElementById('bepCM').textContent = fmtRp(cm);
+  document.getElementById('bepUnit').textContent = isNaN(unit)?'Tidak valid (harga ≤ biaya variabel)':Math.ceil(unit).toLocaleString('id-ID')+' unit';
+  document.getElementById('bepRp').textContent = isNaN(rp)?'-':fmtRp(rp);
+  document.getElementById('bepResult').classList.add('show');
+}
+
+// ---------- MARGIN ----------
+// Gross Profit = Revenue - COGS; GPM% = Gross Profit / Revenue * 100
+// Net Profit = Gross Profit - Opex; NPM% = Net Profit / Revenue * 100
+function calcMargin(){
+  const rev = parseFloat(document.getElementById('mgRev').value)||0;
+  const cogs = parseFloat(document.getElementById('mgCogs').value)||0;
+  const opex = parseFloat(document.getElementById('mgOpex').value)||0;
+  const gross = rev - cogs;
+  const gpm = rev>0 ? (gross/rev)*100 : NaN;
+  const net = gross - opex;
+  const npm = rev>0 ? (net/rev)*100 : NaN;
+  document.getElementById('mgGrossProfit').textContent = fmtRp(gross);
+  document.getElementById('mgGPM').textContent = fmtPct(gpm);
+  document.getElementById('mgNetProfit').textContent = fmtRp(net);
+  document.getElementById('mgNPM').textContent = fmtPct(npm);
+  document.getElementById('mgResult').classList.add('show');
+}
+
+// ---------- ROI ----------
+// ROI% = (Keuntungan Bersih / Total Investasi) * 100
+function calcROI(){
+  const invest = parseFloat(document.getElementById('roiInvest').value)||0;
+  const profit = parseFloat(document.getElementById('roiProfit').value)||0;
+  const roi = invest>0 ? (profit/invest)*100 : NaN;
+  document.getElementById('roiVal').textContent = fmtPct(roi);
+  document.getElementById('roiStatus').textContent = isNaN(roi)?'-':(roi>0?'Investasi menguntungkan':(roi<0?'Investasi merugi':'Impas'));
+  document.getElementById('roiResult').classList.add('show');
+}
+
+// ---------- PRODUKSI ----------
+// Total Biaya = Material + Tenaga Kerja + Overhead
+// Biaya per Unit = Total Biaya / Jumlah Unit
+function calcProduksi(){
+  const mat = parseFloat(document.getElementById('prMat').value)||0;
+  const labor = parseFloat(document.getElementById('prLabor').value)||0;
+  const over = parseFloat(document.getElementById('prOver').value)||0;
+  const units = parseFloat(document.getElementById('prUnits').value)||0;
+  const total = mat+labor+over;
+  const perUnit = units>0 ? total/units : NaN;
+  document.getElementById('prTotal').textContent = fmtRp(total);
+  document.getElementById('prPerUnit').textContent = isNaN(perUnit)?'- (isi jumlah unit)':fmtRp(perUnit);
+  document.getElementById('prResult').classList.add('show');
+}
+
+// ---------- STANDARD CALCULATOR ----------
+const calcKeys = ['C','(',')','÷','7','8','9','×','4','5','6','−','1','2','3','+','0','.','⌫','='];
+const calcGrid = document.getElementById('calcGrid');
+let curExpr = '';
+calcKeys.forEach(k=>{
+  const b = document.createElement('button');
+  b.textContent = k;
+  if(['÷','×','−','+'].includes(k)) b.classList.add('op');
+  if(k==='=') b.classList.add('eq');
+  if(k==='0') b.classList.add('wide');
+  b.addEventListener('click',()=>handleCalcKey(k));
+  calcGrid.appendChild(b);
+});
+function handleCalcKey(k){
+  const disp = document.getElementById('calcCur');
+  const exprDisp = document.getElementById('calcExpr');
+  if(k==='C'){ curExpr=''; disp.textContent='0'; exprDisp.textContent='\u00a0'; return; }
+  if(k==='⌫'){ curExpr = curExpr.slice(0,-1); disp.textContent = curExpr || '0'; return; }
+  if(k==='='){
+    try{
+      const safe = curExpr.replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-');
+      // eslint-disable-next-line no-eval
+      const val = Function('"use strict";return ('+safe+')')();
+      exprDisp.textContent = curExpr + ' =';
+      disp.textContent = Number.isFinite(val) ? (Math.round(val*10000)/10000).toString() : 'Error';
+      curExpr = Number.isFinite(val) ? val.toString() : '';
+    }catch(e){ disp.textContent='Error'; curExpr=''; }
+    return;
+  }
+  curExpr += k;
+  disp.textContent = curExpr;
+}
+</script>
+</body>
+</html>
